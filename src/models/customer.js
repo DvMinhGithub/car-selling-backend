@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const customer = new mongoose.Schema({
+const customerModel = new mongoose.Schema({
     userName:{
         type:String
     },
@@ -27,7 +27,16 @@ const customer = new mongoose.Schema({
     }],
     role:{
         default:'customer'
-    }
+    },
+    reviewCustomer:[{
+        idProduct:{
+            type:mongoose.Types.ObjectId,
+            ref:'car'
+        },
+        review:{
+            type:String
+        }
+    }]
 }) 
 
-module.exports = mongoose.model('customer',customer)
+module.exports = mongoose.model('customer',customerModel)

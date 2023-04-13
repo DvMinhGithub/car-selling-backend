@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const moment = require("moment-timezone");
 const dateVN = moment.tz(Date.now(), "Asia/Bangkok");
-const billModal = new mongoose.Schema({
+const billModel = new mongoose.Schema({
   statusOrder: {
     type: String,
     enum: ["success", "failure", "pending"],
@@ -33,4 +33,4 @@ const billModal = new mongoose.Schema({
   ],
 });
 
-module.exports = mongoose.model("bill", billModal);
+module.exports = mongoose.model("bill", billModel);
