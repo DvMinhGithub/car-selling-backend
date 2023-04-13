@@ -5,6 +5,9 @@ const cartModel = new mongoose.Schema({
         type:mongoose.Types.ObjectId,
         ref:'customer'
     },
+    totalPrice:{
+        type:Number
+    },
     listProduct:[{
         product:{
             type:mongoose.Types.ObjectId,
