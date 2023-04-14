@@ -22,4 +22,4 @@ const customerController = {
     }
 }
 
-module.exports = { customerController }
+module.exports =  customerController 
