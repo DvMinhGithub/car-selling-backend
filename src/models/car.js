@@ -4,15 +4,15 @@ const carModel = new mongoose.Schema({
     type: String,
   },
   price: {
-    type: String,
+    type: Number,
   },
   discount: {
-    type: String,
+    type: Number,
   },
 
   //Giá sau khi giảm
   amountPrice: {
-    type: String,
+    type: Number,
   },
   model: {
     type: String,
@@ -25,6 +25,9 @@ const carModel = new mongoose.Schema({
   },
   color: {
     type: String,
+  },
+  description:{
+    type:String
   },
 
   //Số lượng còn lại
