@@ -30,8 +30,15 @@ const carController = {
   },
   updateCar : async(req,res)=>{
     try {
+      const {price,discount} = req.body
+      let amountPrice 
+      if(discount){
+        amountPrice =  (price*discount)/100
+      }else{
+        amountPrice = price
+      }
       const id = req.query.id
-      const carUpdate = await carModel.findByIdAndUpdate(id,req.body)
+      const carUpdate = await carModel.findByIdAndUpdate(id,{...req.body,amountPrice})
       return res.status(200).json({success:true,data:carUpdate})
     } catch (error) {
       res.send(error)

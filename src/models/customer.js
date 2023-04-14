@@ -4,7 +4,7 @@ const customerModel = new mongoose.Schema({
         type:String
     },
     phoneNumber:{
-        type:String,
+        type:Number,
     },
     email:{
         type:String
@@ -19,7 +19,10 @@ const customerModel = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'cart'
     },
-
+    avatar:{
+        type:String
+    }
+,
     //lịch sử mua hàng
     listOrder:[{
         type: mongoose.Types.ObjectId,
