@@ -45,4 +45,4 @@ const carController = {
     }
   }
 }
-module.exports = { carController }
+module.exports =  carController 
