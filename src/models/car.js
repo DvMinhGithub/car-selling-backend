@@ -26,6 +26,9 @@ const carModel = new mongoose.Schema({
   color: {
     type: String,
   },
+  description:{
+    type:String
+  },
 
   //Số lượng còn lại
   quantity: {
