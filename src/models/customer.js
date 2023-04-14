@@ -29,6 +29,7 @@ const customerModel = new mongoose.Schema({
         ref: 'order'
     }],
     role:{
+        type:String,
         default:'customer'
     },
     reviewCustomer:[{
