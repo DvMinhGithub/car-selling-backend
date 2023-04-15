@@ -26,7 +26,7 @@ const customerModel = new mongoose.Schema({
     //lịch sử mua hàng
     listOrder:[{
         type: mongoose.Types.ObjectId,
-        ref: 'order'
+        ref: 'bill'
     }],
     role:{
         type:String,

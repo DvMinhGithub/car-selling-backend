@@ -3,9 +3,9 @@ const router = express.Router();
 
 const billController = require("../../controllers/billController");
 
-router.get("/", billController.getAllBill);
+router.get("/:idCustomer", billController.getAllBill);
 router.get("/:id", billController.getBillDetail);
 
-router.post("/", billController.createBill);
+router.post("/:idCustomer", billController.createBill);
 
 module.exports = router;
