@@ -8,6 +8,7 @@ const multer = require("multer");
 const routes = require("./src/routes");
 const connectDb = require("./src/configs/db");
 
+connectDb()
 const app = express();
 app.use("/", express.static("public"));
 app.use(cors());

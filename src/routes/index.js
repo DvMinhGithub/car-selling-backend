@@ -7,7 +7,7 @@ const carRouter = require("./v1/carRoute");
 const cartRouter = require("./v1/cartRoute");
 const customerRouter = require("./v1/customerRoute");
 
-routes.use("/api/v1/admin", adminRouter);
+routes.use("/api/v1/admins", adminRouter);
 routes.use("/api/v1/bills", billRouter);
 routes.use("/api/v1/cars", carRouter);
 routes.use("/api/v1/carts", cartRouter);
