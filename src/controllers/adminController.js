@@ -2,6 +2,7 @@ const adminModel = require("../models/admin");
 const bcrypt = require("bcrypt");
 const fs = require("fs");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 
 const arrRefreshToken = [];
 const adminController = {
@@ -28,7 +29,7 @@ const adminController = {
   updateAdmin: async (req, res) => {
     try {
       const { id } = req.params;
-      const currentAdmin = await adminModel.findById(id);
+      const currentAdmin = await adminModel.findById(id).select("-password");
       const currentAvatarUrl = currentAdmin.avatar;
 
       const newAvatarUrl =
@@ -72,34 +73,34 @@ const adminController = {
           .json({ success: false, message: "Tên đăng nhập không tồn tại" });
       }
       const checkPassword = await bcrypt.compare(password, user.password);
-      console.log(checkPassword)
       if (!checkPassword) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
-      const data = await adminModel.findById(user._id).select("-password");
-      const token = jwt.sign({data}, process.env.ACCESS_TOKEN, {
+      const token = jwt.sign({ userId: user._id }, process.env.ACCESS_TOKEN, {
         expiresIn: "20m",
       });
-      const refreshToken = jwt.sign({data}, process.env.REFRESH_TOKEN, {
-        expiresIn: "24h",
-      });
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.REFRESH_TOKEN,
+        { expiresIn: "24h" }
+      );
       arrRefreshToken.push(refreshToken);
+      const userData = await adminModel.findById(user._id).select("-password");
 
-      //Lưu refreshToken vào cookie
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: false,
         path: "/",
         sameSite: "strict",
       });
-
-      return res.status(200).json({ success: true, token });
+      return res.status(200).json({ success: true, token, user: userData });
     } catch (error) {
-      res.send(error);
+      return res.status(500).json({ message: error.message });
     }
   },
+
   refreshToken: async (req, res) => {
     try {
       const refreshToken = req.cookie.refreshToken;
