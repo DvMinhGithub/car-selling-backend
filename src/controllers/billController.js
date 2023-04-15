@@ -1,5 +1,7 @@
 const billModel = require("../models/bill");
+const cart = require("../models/cart");
 const customerModel = require("../models/customer");
+const cartModel = require("../models/cart");
 
 const billController = {
   getAllBill: async (req, res) => {
@@ -40,6 +42,7 @@ const billController = {
       const customer = await customerModel.findById(idCustomer);
       const customerListOrder = customer.listOrder;
       customerListOrder.push(billCreated);
+
       await customerModel.findByIdAndUpdate(idCustomer, {
         listOrder: customerListOrder,
       });
