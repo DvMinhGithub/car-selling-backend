@@ -1,5 +1,6 @@
 const carModel = require("../models/car");
-
+const fs = require("fs");
+const path = require("path");
 const carController = {
   getAllCar: async (req, res) => {
     try {
@@ -30,20 +31,35 @@ const carController = {
   },
   updateCar: async (req, res) => {
     try {
-      const { price, discount } = req.body;
-      let amountPrice;
-      if (discount) {
-        amountPrice = (price * discount) / 100;
-      } else {
-        amountPrice = price;
-      }
       const id = req.query.id;
+
+      const { price, discount } = req.body;
+      const updateData = { ...req.body };
+      updateData.amountPrice = discount ? (price * discount) / 100 : price;
+
+      const currentCar = await carModel.findById(id);
+      const currentAvatarUrl = currentCar.carImage;
+
+      const newAvatarUrl =
+        req.file &&
+        `http://localhost:${process.env.PORT}/images/${req.file.filename}`;
+
+      if (newAvatarUrl) {
+        updateData.carImage = newAvatarUrl;
+
+        if (currentAvatarUrl && currentAvatarUrl !== newAvatarUrl) {
+          const oldAvatarPath = path.join(
+            __dirname,
+            "../../public",
+            currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, "")
+          );
+          if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
+        }
+      }
+
       const carUpdate = await carModel.findByIdAndUpdate(
         id,
-        {
-          ...req.body,
-          amountPrice,
-        },
+        { $set: updateData },
         { new: true }
       );
       res.status(200).json({ success: true, data: carUpdate });
