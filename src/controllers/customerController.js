@@ -19,13 +19,13 @@ const customerController = {
           .status(404)
           .json({ success: false, message: "Email already exists" });
       } else {
-        const hashPassword = bcrypt.hash(password, 10);
+        const hashPassword =await bcrypt.hash(password, 10);
         const customerAcc = await customerModel.create({
           userName,
           email,
           phoneNumber,
           address,
-          hashPassword,
+         password: hashPassword,
         });
 
         //Khi tạo 1 customer mới sẽ tạo luôn 1 giỏ hàng cho customer đấy
@@ -84,29 +84,27 @@ const customerController = {
     try {
       const { email, password } = req.body;
       const user = await customerModel.findOne({ email });
+     
       if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "Tên đăng nhập không tồn tại" });
       }
-      const checkPassword = await bcrypt.compare(password, user.password);
+      const checkPassword =await bcrypt.compare(password, user.password);
       if (!checkPassword) {
         res
           .status(404)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
-      const data = {
-        id: user._id,
-        role: user.role,
-      };
-      const token = jwt.sign(data, process.env.ACCESS_TOKEN, {
+      const data = await customerModel.findById(user._id).select("-password")
+    
+      const token = jwt.sign({data}, process.env.ACCESS_TOKEN, {
         expiresIn: "20m",
       });
-      const refreshToken = jwt.sign(data, process.env.REFRESH_TOKEN, {
+      const refreshToken = jwt.sign({data}, process.env.REFRESH_TOKEN, {
         expiresIn: "24h",
       });
       arrRefreshToken.push(refreshToken);
-
       //Lưu refreshToken vào cookie
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -179,6 +177,7 @@ const customerController = {
       // clear cookie khi logout
       arrRefreshToken = arrRefreshToken.filter((token) => token !== refreshToken);
       res.clearCookie("refreshToken");
+      console.log(arrRefreshToken)
       res
         .status(200)
         .json({ success: true });
@@ -186,6 +185,7 @@ const customerController = {
       next(err);
     }
   },
+
 };
 
 module.exports = customerController;
