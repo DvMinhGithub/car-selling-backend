@@ -19,13 +19,13 @@ const customerController = {
           .status(404)
           .json({ success: false, message: "Email already exists" });
       } else {
-        const hashPassword =await bcrypt.hash(password, 10);
+        const hashPassword = await bcrypt.hash(password, 10);
         const customerAcc = await customerModel.create({
           userName,
           email,
           phoneNumber,
           address,
-         password: hashPassword,
+          password: hashPassword,
         });
 
         //Khi tạo 1 customer mới sẽ tạo luôn 1 giỏ hàng cho customer đấy
@@ -84,24 +84,24 @@ const customerController = {
     try {
       const { email, password } = req.body;
       const user = await customerModel.findOne({ email });
-     
+
       if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "Tên đăng nhập không tồn tại" });
       }
-      const checkPassword =await bcrypt.compare(password, user.password);
+      const checkPassword = await bcrypt.compare(password, user.password);
       if (!checkPassword) {
         res
           .status(404)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
-      const data = await customerModel.findById(user._id).select("-password")
-    
-      const token = jwt.sign({data}, process.env.ACCESS_TOKEN, {
+      const data = await customerModel.findById(user._id).select("-password");
+
+      const token = jwt.sign({ data }, process.env.ACCESS_TOKEN, {
         expiresIn: "20m",
       });
-      const refreshToken = jwt.sign({data}, process.env.REFRESH_TOKEN, {
+      const refreshToken = jwt.sign({ data }, process.env.REFRESH_TOKEN, {
         expiresIn: "24h",
       });
       arrRefreshToken.push(refreshToken);
@@ -113,7 +113,9 @@ const customerController = {
         sameSite: "strict",
       });
 
-      return res.status(200).json({ success: true, token });
+      const userData = await customerModel.findById(user._id).select("-password");
+
+      return res.status(200).json({ success: true, token, userData });
     } catch (error) {
       res.send(error);
     }
@@ -175,17 +177,16 @@ const customerController = {
       const refreshToken = req.cookies.refreshToken;
 
       // clear cookie khi logout
-      arrRefreshToken = arrRefreshToken.filter((token) => token !== refreshToken);
+      arrRefreshToken = arrRefreshToken.filter(
+        (token) => token !== refreshToken
+      );
       res.clearCookie("refreshToken");
-      console.log(arrRefreshToken)
-      res
-        .status(200)
-        .json({ success: true });
+      console.log(arrRefreshToken);
+      res.status(200).json({ success: true });
     } catch (err) {
       next(err);
     }
   },
-
 };
 
 module.exports = customerController;
