@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const fs = require("fs");
 const path = require("path");
 
-const arrRefreshToken = []
+const arrRefreshToken = [];
 const adminController = {
   createAdminAcc: async (req, res) => {
     try {
@@ -15,8 +15,8 @@ const adminController = {
           .status(404)
           .json({ success: false, message: "Tên đăng nhập tồn tại" });
       } else {
-        const hashPassword = bcrypt.hash(password, 10);
-        await adminModel.create({ userName, email, hashPassword });
+        const hashPassword = await bcrypt.hash(password, 10);
+        await adminModel.create({ userName, email, password: hashPassword });
         res
           .status(200)
           .json({ success: true, message: "Tạo tài khoản thành công" });
@@ -45,7 +45,7 @@ const adminController = {
             "../../public",
             currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, "")
           );
-         if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
+          if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
         }
       }
 
@@ -65,26 +65,24 @@ const adminController = {
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
-      const user = await customerModel.findOne({ email });
+      const user = await adminModel.findOne({ email });
       if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "Tên đăng nhập không tồn tại" });
       }
       const checkPassword = await bcrypt.compare(password, user.password);
+      console.log(checkPassword)
       if (!checkPassword) {
         res
           .status(404)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
-      const data = {
-        id: user._id,
-        role: user.role,
-      };
-      const token = jwt.sign(data, process.env.ACCESS_TOKEN, {
+      const data = await adminModel.findById(user._id).select("-password");
+      const token = jwt.sign({data}, process.env.ACCESS_TOKEN, {
         expiresIn: "20m",
       });
-      const refreshToken = jwt.sign(data, process.env.REFRESH_TOKEN, {
+      const refreshToken = jwt.sign({data}, process.env.REFRESH_TOKEN, {
         expiresIn: "24h",
       });
       arrRefreshToken.push(refreshToken);
@@ -160,11 +158,11 @@ const adminController = {
       const refreshToken = req.cookies.refreshToken;
 
       // clear cookie khi logout
-      arrRefreshToken = arrRefreshToken.filter((token) => token !== refreshToken);
+      arrRefreshToken = arrRefreshToken.filter(
+        (token) => token !== refreshToken
+      );
       res.clearCookie("refreshToken");
-      res
-        .status(200)
-        .json({ success: true });
+      res.status(200).json({ success: true });
     } catch (err) {
       next(err);
     }
