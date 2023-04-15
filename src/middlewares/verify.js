@@ -1,33 +1,54 @@
-const jwt = require('jsonwebtoken');
-const { expressjwt: jwt } = require("express-jwt");
+const jwt = require("jsonwebtoken");
 
-const verify = jwt({
-    secret: "secret",
-    algorithms: ["HS256"],
-    getToken: function fromHeaderOrQuerystring(req) {
-      if (
-        req.headers.authorization &&
-        req.headers.authorization.split(" ")[0] === "Bearer"
-      ) {
-        return req.headers.authorization.split(" ")[1];
-      } else if (req.query && req.query.token) {
-        return req.query.token;
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization;
+  if (token) {
+    const accessToken = token.split(" ")[1];
+    jwt.verify(accessToken, process.env.ACCESS_TOKEN, (err, data) => {
+      if (err) {
+        res.status(403).json("Token is not valid!");
       }
-      return null;
-    },
-  })
+      req.data = data;
+      next();
+    });
+  } else {
+    res.status(401).json("You're not authenticated");
+  }
+};
 
-const role = (req,res,next)=>{
-    const role= req.auth.data.role
-    if(role != 'admin'){
-        res.send({message: 'ban ko co quyen admin'})
-    }
-    else{
-        return next()
-    }
 
-}
-module.exports={
-    verify,
-    role
-}
+const verifyTokenCustomer = (req, res, next) => {
+  verifyToken(req, res, () => {
+    if (req.data.role.includes("customer")) {
+      next();
+    } else {
+      res.status(403).json("You're not allowed to do that!");
+    }
+  });
+};
+
+const verifyTokenAdmin = (req, res, next) => {
+  verifyToken(req, res, () => {
+    if (req.data.role.includes("admin")) {
+      next();
+    } else {
+      res.status(403).json("You're not allowed to do that!");
+    }
+  });
+};
+
+const verifyTokenAllRole = (req, res, next) => {
+  verifyToken(req, res, () => {
+    if (req.data.role.includes("admin") || req.data.role.includes('customer')) {
+      next();
+    } else {
+      res.status(403).json("You're not allowed to do that!");
+    }
+  });
+};
+
+module.exports = {
+  verifyTokenAdmin,
+  verifyTokenCustomer,
+  verifyTokenAllRole
+};
