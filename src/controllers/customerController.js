@@ -1,6 +1,8 @@
 const customerModel = require("../models/customer");
 const bcrypt = require("bcrypt");
 const cartModel = require("../models/cart");
+const fs = require("fs");
+const path = require("path");
 
 const customerController = {
   register: async (req, res) => {
@@ -30,6 +32,46 @@ const customerController = {
           data: customerAcc,
         });
       }
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
+  updateCustomer: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const currentCustomer = await customerModel.findById(id);
+      const currentAvatarUrl = currentCustomer.avatar;
+
+      const newAvatarUrl =
+        req.file &&
+        `http://localhost:${process.env.PORT}/images/${req.file.filename}`;
+
+      const updateData = { ...req.body };
+      if (newAvatarUrl) {
+        updateData.avatar = newAvatarUrl;
+
+        if (currentAvatarUrl && currentAvatarUrl !== newAvatarUrl) {
+          const oldAvatarPath = path.join(
+            __dirname,
+            "../../public",
+            currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, "")
+          );
+          if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
+        }
+      }
+
+      const updatedCustomer = await customerModel.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Update success ",
+        data: updatedCustomer,
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
