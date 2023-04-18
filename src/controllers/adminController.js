@@ -56,7 +56,7 @@ const adminController = {
 
       res.status(200).json({
         success: true,
-        message: "Update success ",
+        message: "Cập nhật thành công",
         data: updatedAdmin,
       });
     } catch (error) {
