@@ -17,7 +17,7 @@ const customerController = {
       if (checkEmail) {
         return res
           .status(404)
-          .json({ success: false, message: "Email already exists" });
+          .json({ success: false, message: "Email đã tồn tại" });
       } else {
         const hashPassword = await bcrypt.hash(password, 10);
         const customerAcc = await customerModel.create({
@@ -26,13 +26,14 @@ const customerController = {
           phoneNumber,
           address,
           password: hashPassword,
-        });
+        })
 
         //Khi tạo 1 customer mới sẽ tạo luôn 1 giỏ hàng cho customer đấy
         await cartModel.create({ idCustomer: customerAcc._id });
-        res.status(200).json({
+
+        return res.status(200).json({
           success: true,
-          message: "Register success",
+          message: "Đăng ký thành công",
           data: customerAcc,
         });
       }
@@ -73,7 +74,7 @@ const customerController = {
 
       res.status(200).json({
         success: true,
-        message: "Update success ",
+        message: "Cập nhật thành công",
         data: updatedCustomer,
       });
     } catch (error) {
