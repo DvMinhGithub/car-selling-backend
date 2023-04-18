@@ -12,13 +12,13 @@ const adminController = {
       const checkEmail = await adminModel.findOne({ email });
 
       if (checkEmail) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Tên đăng nhập tồn tại" });
       } else {
         const hashPassword = await bcrypt.hash(password, 10);
         await adminModel.create({ userName, email, password: hashPassword });
-        res
+        return res
           .status(200)
           .json({ success: true, message: "Tạo tài khoản thành công" });
       }
@@ -107,12 +107,12 @@ const adminController = {
       //lấy token trong cookie
 
       if (!refreshToken) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Bạn không có quyền truy cập" });
       }
       if (!arrRefreshToken.includes(refreshToken)) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Bạn không có quyền truy cập" });
       }

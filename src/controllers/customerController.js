@@ -15,7 +15,7 @@ const customerController = {
 
       const checkEmail = await customerModel.findOne({ email });
       if (checkEmail) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Email already exists" });
       } else {
@@ -92,7 +92,7 @@ const customerController = {
       }
       const checkPassword = await bcrypt.compare(password, user.password);
       if (!checkPassword) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
@@ -113,7 +113,9 @@ const customerController = {
         sameSite: "strict",
       });
 
-      const userData = await customerModel.findById(user._id).select("-password");
+      const userData = await customerModel
+        .findById(user._id)
+        .select("-password");
 
       return res.status(200).json({ success: true, token, userData });
     } catch (error) {
@@ -126,12 +128,12 @@ const customerController = {
       //lấy token trong cookie
 
       if (!refreshToken) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Bạn không có quyền truy cập" });
       }
       if (!arrRefreshToken.includes(refreshToken)) {
-        res
+        return res
           .status(404)
           .json({ success: false, message: "Bạn không có quyền truy cập" });
       }
