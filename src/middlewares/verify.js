@@ -1,20 +1,19 @@
 const jwt = require("jsonwebtoken");
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization;
-  if (token) {
-    const accessToken = token.split(" ")[1];
-    jwt.verify(accessToken, process.env.ACCESS_TOKEN, (err, data) => {
-      if (err) {
-        res.status(403).json("Token is not valid!");
-      }
-      req.data = data;
-      next();
-    });
-  } else {
-    res.status(401).json("You're not authenticated");
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token)
+    res.status(401).json("Bạn chưa được xác thực");
+
+  try {
+    const {data} = jwt.verify(token, process.env.ACCESS_TOKEN)
+    console.log("🚀 ~ file: verify.js:10 ~ verifyToken ~ decode:", data)
+    req.data = data;
+    next()
+  } catch (error) {
+    res.status(403).json("Token không hợp lệ!");
   }
-};
+}
 
 
 const verifyTokenCustomer = (req, res, next) => {
