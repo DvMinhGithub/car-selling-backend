@@ -5,7 +5,7 @@ const carController = require("../../controllers/carController");
 const uploadFile = require("../../middlewares/upload");
 const { verifyTokenAdmin, verifyTokenAllRole } = require("../../middlewares/verify");
 
-router.get("/",verifyTokenAllRole, carController.getAllCar);
+router.get("/", carController.getAllCar);
 router.get("/detail",verifyTokenAllRole, carController.getCarDetail);
 
 router.post("/",verifyTokenAdmin, carController.createCar);
