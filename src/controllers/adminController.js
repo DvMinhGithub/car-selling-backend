@@ -78,11 +78,15 @@ const adminController = {
           .status(404)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
-      const token = jwt.sign({ userId: user._id }, process.env.ACCESS_TOKEN, {
-        expiresIn: "20m",
-      });
+      const token = jwt.sign(
+        { idCustomer: user._id },
+        process.env.ACCESS_TOKEN,
+        {
+          expiresIn: "20m",
+        }
+      );
       const refreshToken = jwt.sign(
-        { userId: user._id },
+        { idCustomer: user._id },
         process.env.REFRESH_TOKEN,
         { expiresIn: "24h" }
       );

@@ -26,8 +26,8 @@ const carModel = new mongoose.Schema({
   color: {
     type: String,
   },
-  description:{
-    type:String
+  description: {
+    type: String,
   },
 
   //Số lượng còn lại
@@ -52,5 +52,4 @@ const carModel = new mongoose.Schema({
   ],
 });
 
-
-module.exports = mongoose.model('car',carModel)
+module.exports = mongoose.model("car", carModel);

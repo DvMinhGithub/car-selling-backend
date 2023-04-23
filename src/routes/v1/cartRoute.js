@@ -1,9 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const {verifyTokenCustomer} = require('../../middlewares/verify')
+
+const { verifyTokenCustomer } = require("../../middlewares/verify");
 const cartController = require("../../controllers/cartController");
 
-router.put("/:idCustomer",verifyTokenCustomer, cartController.updateCart);
-router.put("/reset/:idCustomer",verifyTokenCustomer, cartController.resetCart);
+router.get("/:idCustomer", cartController.getCartItems);
+
+router.post("/:idCustomer", cartController.addToCart);
+
+// router.put("/:idCustomer", verifyTokenCustomer, cartController.updateCart);
+router.put("/:idCustomer", cartController.updateCart);
+
+router.put("/reset/:idCustomer", verifyTokenCustomer, cartController.resetCart);
 
 module.exports = router;

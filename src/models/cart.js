@@ -12,7 +12,7 @@ const cartModel = new mongoose.Schema({
     {
       idProduct: {
         type: mongoose.Types.ObjectId,
-        ref: "product",
+        ref: "car",
       },
 
       //Số lượng
