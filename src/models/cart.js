@@ -7,6 +7,7 @@ const cartModel = new mongoose.Schema({
   },
   totalPrice: {
     type: Number,
+    default: 0,
   },
   listProduct: [
     {
