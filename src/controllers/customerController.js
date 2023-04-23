@@ -184,7 +184,6 @@ const customerController = {
         (token) => token !== refreshToken
       );
       res.clearCookie("refreshToken");
-      console.log(arrRefreshToken);
       res.status(200).json({ success: true });
     } catch (err) {
       next(err);
