@@ -6,13 +6,11 @@ const cartController = {
     try {
       const idCustomer = req.params.idCustomer;
 
-      const { listProduct } = await cartModel.findOne({ idCustomer });
-      // lấy danh sách id
-      const idProducts = listProduct.map((item) => item.idProduct);
-      //lấy thông tin từ listId
-      const carListInCart = await carModel.find({ _id: { $in: idProducts } });
+      const data = await cartModel
+        .findOne({ idCustomer })
+        .populate("listProduct.idProduct");
 
-      return res.status(200).json({ data: carListInCart });
+      return res.status(200).json({ data });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -36,6 +34,10 @@ const cartController = {
 
       await cart.save();
 
+      cart = await cartModel
+        .findOne({ idCustomer })
+        .populate("listProduct.idProduct");
+
       res
         .status(201)
         .json({ message: "Thêm sản phẩm vào giỏ hàng thành công", data: cart });
@@ -58,16 +60,8 @@ const cartController = {
         const { amountProduct } = product.find(
           (p) => p.idProduct === car._id.toString()
         );
-        console.log(
-          "🚀 ~ file: cartController.js:60 ~ totalPrice ~ amountProduct:",
-          amountProduct
-        );
         return total + car.amountPrice * amountProduct;
       }, 0);
-      console.log(
-        "🚀 ~ file: cartController.js:62 ~ totalPrice ~ totalPrice:",
-        totalPrice
-      );
 
       const cartUpdate = await cartModel.findOneAndUpdate(
         { idCustomer },

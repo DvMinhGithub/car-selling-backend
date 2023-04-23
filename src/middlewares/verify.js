@@ -7,7 +7,6 @@ const verifyToken = (req, res, next) => {
 
   try {
     const {data} = jwt.verify(token, process.env.ACCESS_TOKEN)
-    console.log("🚀 ~ file: verify.js:10 ~ verifyToken ~ decode:", data)
     req.data = data;
     next()
   } catch (error) {

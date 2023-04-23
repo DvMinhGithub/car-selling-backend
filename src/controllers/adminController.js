@@ -159,7 +159,6 @@ const adminController = {
   },
   logOut: async (req, res, next) => {
     try {
-      console.log(req.cookies);
       const refreshToken = req.cookies.refreshToken;
 
       // clear cookie khi logout
