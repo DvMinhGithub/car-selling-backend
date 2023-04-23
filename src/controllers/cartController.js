@@ -6,8 +6,7 @@ const cartController = {
     try {
       const idCustomer = req.params.idCustomer;
 
-      const { listProduct } = await cartModel
-        .findOne({ idCustomer })
+      const { listProduct } = await cartModel.findOne({ idCustomer });
       // lấy danh sách id
       const idProducts = listProduct.map((item) => item.idProduct);
       //lấy thông tin từ listId
@@ -21,18 +20,22 @@ const cartController = {
 
   addToCart: async (req, res, next) => {
     try {
-      console.log(req.body);
       const idCustomer = req.params.idCustomer;
       let cart = await cartModel.findOne({ idCustomer });
-      if (!cart) {
-        cart = await cartModel.create({
-          idCustomer,
-          totalPrice: req.body.amountPrice,
-          listProduct: [{ idProduct: req.body.idProduct }],
-        });
-      }
 
-      // const result = await newCartItem.save();
+      // kiểm tra có san pham chưa
+      const product = cart.listProduct.find(
+        (item) => item.idProduct.toString() === req.body.idProduct
+      );
+
+      product
+        ? (product.amountProduct += 1)
+        : cart.listProduct.push({ idProduct: req.body.idProduct });
+
+      cart.totalPrice += req.body.amountPrice;
+
+      await cart.save();
+
       res
         .status(201)
         .json({ message: "Thêm sản phẩm vào giỏ hàng thành công", data: cart });
@@ -45,10 +48,6 @@ const cartController = {
     try {
       const { idCustomer } = req.params;
       const product = req.body.listProduct;
-      console.log(
-        "🚀 ~ file: cartController.js:46 ~ updateCart: ~ product:",
-        product
-      );
 
       const carIds = product.map((p) => p.idProduct);
       // lấy ra các document có _id thuộc carIds
