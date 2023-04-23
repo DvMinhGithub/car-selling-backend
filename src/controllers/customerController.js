@@ -26,7 +26,7 @@ const customerController = {
           phoneNumber,
           address,
           password: hashPassword,
-        })
+        });
 
         //Khi tạo 1 customer mới sẽ tạo luôn 1 giỏ hàng cho customer đấy
         await cartModel.create({ idCustomer: customerAcc._id });
