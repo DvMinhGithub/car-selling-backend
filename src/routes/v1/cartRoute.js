@@ -9,7 +9,7 @@ router.get("/:idCustomer", cartController.getCartItems);
 router.post("/:idCustomer", cartController.addToCart);
 
 // router.put("/:idCustomer", verifyTokenCustomer, cartController.updateCart);
-router.put("/:idCustomer", cartController.updateCart);
+
 
 router.put("/reset/:idCustomer", verifyTokenCustomer, cartController.resetCart);
 
