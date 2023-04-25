@@ -1,5 +1,6 @@
 const cartModel = require("../models/cart");
 const carModel = require("../models/car");
+const mongoose = require("mongoose");
 
 const cartController = {
   getCartItems: async (req, res, next) => {
@@ -8,7 +9,7 @@ const cartController = {
 
       const data = await cartModel
         .findOne({ idCustomer })
-        .populate("listProduct");
+        .populate("listProduct.idProduct");
 
       return res.status(200).json({ data });
     } catch (error) {
@@ -16,29 +17,35 @@ const cartController = {
     }
   },
 
-  addToCart: async (req, res, next) => {
+  addToCart: async (req, res) => {
     try {
-      const idCustomer = req.params.idCustomer;
-      let cart = await cartModel.findOne({ idCustomer });
-      const listProduct = req.body;
+      const { idCustomer } = req.params;
+      const { listProduct } = req.body;
+      console.log("🚀 ~ file: cartController.js:24 ~ addToCart: ~ listProduct:", listProduct)
+
       let totalPrice = 0;
-      for (i = 0; i < listProduct.length; i++) {
-        const product = await carModel.findById(listProduct[i].idProduct);
-        const productPrice = product.amountPrice;
-        totalPrice += (productPrice * listProduct[i].amountProduct);
+      for (const productData of listProduct) {
+        const product = await carModel.findById(productData.idProduct);
+        if (product) {
+          const productPrice = product.amountPrice;
+          totalPrice += productPrice * productData.amountProduct;
+        }
       }
-      console.log(totalPrice)
-      let updateCart = await cartModel.findByIdAndUpdate(
-        cart._id,
-        { listProduct: req.body,totalPrice:totalPrice },
-        { new: true }
-      );
+
+      let cart = await cartModel
+        .findOneAndUpdate(
+          { idCustomer },
+          { listProduct, totalPrice },
+          { new: true, upsert: true }
+        )
+        .populate("listProduct.idProduct");
 
       res.status(201).json({
         message: "Thêm sản phẩm vào giỏ hàng thành công",
-        data: updateCart,
+        data: cart,
       });
     } catch (error) {
+      console.error(error);
       res.status(500).json({ message: error.message });
     }
   },
