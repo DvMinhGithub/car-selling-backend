@@ -55,7 +55,7 @@ const cartController = {
       const { idCustomer } = req.params; //Id khách hàng
       const cartReset = await cartModel.findOneAndUpdate(
         { idCustomer },
-        { listProduct: [] },
+        { listProduct: [], totalPrice: 0 },
         { new: true }
       );
       res.status(200).json({ success: true, data: cartReset });
