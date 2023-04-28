@@ -21,7 +21,6 @@ const cartController = {
     try {
       const { idCustomer } = req.params;
       const { listProduct } = req.body;
-      console.log("🚀 ~ file: cartController.js:24 ~ addToCart: ~ listProduct:", listProduct)
 
       let totalPrice = 0;
       for (const productData of listProduct) {
