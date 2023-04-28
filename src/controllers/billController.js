@@ -26,26 +26,16 @@ const billController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
-
-  //Khi người dùng bấm thanh toán sẽ tạo bill
+  // tạo bill mới khi thanh toán
   createBill: async (req, res) => {
     try {
-      const { idCustomer } = req.params; //Id khách hàng
-
-      //Tạo bill mới
-      const billCreated = await billModel.create({
-        ...req.body,
+      const { idCustomer } = req.params;
+      const billCreated = await billModel.create({ ...req.body });
+      await customerModel.findByIdAndUpdate(
         idCustomer,
-      });
-
-      //Đẩy bill mới vào lịch sử đơn hàng
-      const customer = await customerModel.findById(idCustomer);
-      const customerListOrder = customer.listOrder;
-      customerListOrder.push(billCreated);
-
-      await customerModel.findByIdAndUpdate(idCustomer, {
-        listOrder: customerListOrder,
-      });
+        { $set: { $push: { listOrder: billCreated._id } } },
+        { new: true }
+      );
       res.status(200).json({ success: true, data: billCreated });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
