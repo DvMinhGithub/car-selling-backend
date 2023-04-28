@@ -6,7 +6,7 @@ const cartController = require("../../controllers/cartController");
 
 router.get("/:idCustomer", verifyTokenCustomer, cartController.getCartItems);
 
-router.post("/:idCustomer", cartController.addToCart);
+router.post("/:idCustomer", verifyTokenCustomer, cartController.addToCart);
 
 // router.put("/:idCustomer", verifyTokenCustomer, cartController.updateCart);
 
