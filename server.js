@@ -18,9 +18,11 @@ app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(morgan('dev', {
-  skip: function (req, res) { return res.statusCode < 400 }
-}));
+app.use(
+  morgan("dev", {
+    // skip: function (req, res) { return res.statusCode < 400 }
+  })
+);
 
 app.use("/", express.static("public"));
 

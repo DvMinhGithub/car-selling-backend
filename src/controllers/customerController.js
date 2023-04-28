@@ -4,9 +4,7 @@ const cartModel = require("../models/cart");
 const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
-
-const arrRefreshToken = [];
-//Tạo 1 mảng chứa refreshToken để lát đối chiếu
+const { generateAccessToken, generateRefreshToken } = require("../utils/auth");
 
 const customerController = {
   register: async (req, res) => {
@@ -85,96 +83,90 @@ const customerController = {
     try {
       const { email, password } = req.body;
       const user = await customerModel.findOne({ email });
-
       if (!user) {
         return res
-          .status(404)
-          .json({ success: false, message: "Tên đăng nhập không tồn tại" });
+          .status(401)
+          .json({ success: false, message: "Email không tồn tại" });
       }
       const checkPassword = await bcrypt.compare(password, user.password);
       if (!checkPassword) {
         return res
-          .status(404)
+          .status(401)
           .json({ success: false, message: "Mật khẩu không đúng" });
       }
-      const data = await customerModel.findById(user._id).select("-password");
-
-      const token = jwt.sign({ data }, process.env.ACCESS_TOKEN, {
-        expiresIn: "20m",
+      const userData = {
+        _id: user._id,
+        userName: user.userName,
+        email: user.email,
+        role: user.role,
+      };
+      const accessToken = generateAccessToken(userData);
+      const refreshToken = generateRefreshToken(userData);
+      user.refreshToken = refreshToken;
+      await user.save();
+      return res.status(200).json({
+        success: true,
+        userData,
+        accessToken,
+        refreshToken,
       });
-      const refreshToken = jwt.sign({ data }, process.env.REFRESH_TOKEN, {
-        expiresIn: "24h",
-      });
-      arrRefreshToken.push(refreshToken);
-      //Lưu refreshToken vào cookie
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: false,
-        path: "/",
-        sameSite: "strict",
-      });
-
-      const userData = await customerModel
-        .findById(user._id)
-        .select("-password");
-
-      return res.status(200).json({ success: true, token, userData });
     } catch (error) {
-      res.send(error);
+      res.status(500).json({ success: false, message: error.message });
     }
   },
+
   refreshToken: async (req, res) => {
     try {
-      const refreshToken = req.cookie.refreshToken;
-      //lấy token trong cookie
-
+      const { refreshToken } = req.body;
       if (!refreshToken) {
         return res
           .status(404)
-          .json({ success: false, message: "Bạn không có quyền truy cập" });
+          .json({ success: false, message: "Không tìm thấy refreshToken" });
       }
-      if (!arrRefreshToken.includes(refreshToken)) {
+
+      const user = await customerModel.findOne({ refreshToken });
+      if (!user) {
         return res
           .status(404)
-          .json({ success: false, message: "Bạn không có quyền truy cập" });
+          .json({ success: false, message: "RefreshToken không hợp lệ" });
       }
-      jwt.verify(refreshToken, process.env.REFRESH_TOKEN, (err, data) => {
+
+      jwt.verify(refreshToken, process.env.REFRESH_TOKEN, async (err, data) => {
         if (err) {
-          next(err);
+          return res
+            .status(401)
+            .json({ success: false, message: "Không được phép" });
         }
-        arrRefreshToken = arrRefreshToken.filter(
-          (token) => token !== refreshToken
-        );
-        // tạo ra access, refresh token mới
-        const newAccessToken = jwt.sign(data, process.env.ACCESS_TOKEN, {
-          expiresIn: "20m",
-        });
-        const newRefreshToken = jwt.sign(data, process.env.REFRESH_TOKEN, {
-          expiresIn: "24h",
+
+        const userData = {
+          _id: user._id,
+          userName: user.userName,
+          email: user.email,
+          role: user.role,
+        };
+        const newAccessToken = generateAccessToken(userData);
+        const newRefreshToken = generateRefreshToken(userData);
+
+        await customerModel.findByIdAndUpdate(user._id, {
+          refreshToken: newRefreshToken,
         });
 
-        arrRefreshToken.push(newRefreshToken);
-        // lưu refresh token ms vào cookie
-        res.cookie("refreshToken", newRefreshToken, {
-          httpOnly: true,
-          secure: false,
-          path: "/",
-          sameSite: "strict",
-        });
         res.status(200).json({
           success: true,
-          data: [
-            {
-              accessToken: newAccessToken,
-              refreshToken: newRefreshToken,
-            },
-          ],
+          data: {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+          },
         });
       });
     } catch (error) {
-      res.send(error);
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
     }
   },
+
   logOut: async (req, res, next) => {
     try {
       const refreshToken = req.cookies.refreshToken;
