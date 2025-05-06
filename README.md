@@ -1,55 +1,94 @@
-# 🚗 Car Selling Platform - Backend API
+# Car Selling Backend
 
-![Node.js](https://img.shields.io/badge/Node.js-18.x-green)
-![Express](https://img.shields.io/badge/Express-4.x-lightgrey)
-![MongoDB](https://img.shields.io/badge/MongoDB-6.0-brightgreen)
+Backend API for car selling application, built with Node.js and Express.
 
-## 🛠 Technologies Used
+## Technologies Used
 
-| Category     | Technologies      |
-| ------------ | ----------------- |
-| **Core**     | Node.js, Express  |
-| **Database** | MongoDB, Mongoose |
-| **Auth**     | JWT, Bcrypt       |
-| **Security** | Helmet, CORS      |
-| **File**     | Multer            |
-| **Logging**  | Morgan            |
+- Node.js
+- Express.js
+- MongoDB (Mongoose)
+- JWT Authentication
+- Multer (File upload handling)
+- Bcrypt (Password hashing)
+- Helmet (Security)
+- CORS
+- Morgan (Logging)
 
-## 💻 Installation
+## Project Structure
+
+```
+src/
+├── configs/     # Database and other configurations
+├── controllers/ # Business logic handlers
+├── middlewares/ # Middleware functions
+├── models/      # Mongoose models
+├── routes/      # API routes
+└── utils/       # Utility functions
+```
+
+## Installation
+
+1. Clone repository:
 
 ```bash
-# Clone repository
 git clone https://github.com/DvMinhGithub/car-selling-backend.git
 cd car-selling-backend
+```
 
-# Install dependencies
+2. Install dependencies:
+
+```bash
 npm install
-
-# Set up environment
-cp .env.example .env
-
-# Start development server
-npm run start
+# or
+yarn install
 ```
 
-## Configuration
+3. Create .env file and configure environment variables:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
+```
+
+4. Run server:
 
 ```bash
-# .env.example
-PORT = 3000
-DB_URL = "mongodb://127.0.0.1/car_dealership"
-ACCESS_TOKEN =  your_access_token
-REFRESH_TOKEN =  your_refresh_token
+npm start
+# or
+yarn start
 ```
 
-## 📂 Project Structure
+## Scripts
 
-```bash
-src/
-├── configs/
-├── controllers/
-├── middlewares/
-├── models/
-├── routes/
-└── utils/
-```
+- `npm start`: Run server with nodemon
+- `npm run lint`: Check for ESLint errors
+- `npm run lint:fix`: Automatically fix ESLint errors
+- `npm run format:check`: Check code formatting
+- `npm run format`: Automatically format code
+
+## Features
+
+- User authentication (JWT)
+- Image upload and management
+- RESTful API for car management
+- Security with Helmet
+- Logging with Morgan
+- CORS enabled
+- Centralized error handling
+
+## Security
+
+- Helmet for HTTP headers protection
+- Password hashing with bcrypt
+- JWT for authentication
+- Secure CORS configuration
+
+## Development
+
+Project uses:
+
+- ESLint for linting
+- Prettier for code formatting
+- Husky for git hooks
+- Lint-staged for pre-commit code checking
