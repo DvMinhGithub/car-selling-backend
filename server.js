@@ -1,12 +1,13 @@
 require('dotenv').config();
+
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const express = require('express');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 
-const routes = require('./src/routes');
-const connectDb = require('./src/configs/db');
+const routes = require('#routes/index');
+const connectDb = require('#configs/db');
 
 const app = express();
 connectDb();

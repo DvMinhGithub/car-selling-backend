@@ -1,6 +1,8 @@
-const carModel = require('../models/car');
 const fs = require('fs');
 const path = require('path');
+
+const carModel = require('#models/car');
+
 const carController = {
   getAllCar: async (req, res) => {
     try {

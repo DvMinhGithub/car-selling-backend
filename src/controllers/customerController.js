@@ -1,12 +1,12 @@
-const customerModel = require('../models/customer');
 const bcrypt = require('bcrypt');
-const fs = require('fs');
-const cartModel = require('../models/cart');
-const path = require('path');
 const jwt = require('jsonwebtoken');
-const { generateToken, verifyToken } = require('../utils/helpers');
-const { HTTP_STATUS } = require('../configs/constants');
-const constants = require('../configs/constants');
+const path = require('path');
+const fs = require('fs');
+
+const customerModel = require('#models/customer');
+const cartModel = require('#models/cart');
+const { HTTP_STATUS, JWT } = require('#configs/constants');
+const { generateToken, verifyToken } = require('#utils/helpers');
 
 const customerController = {
   register: async (req, res) => {
@@ -140,7 +140,7 @@ const customerController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: constants.COOKIE_EXPIRES_IN,
+        maxAge: JWT.COOKIE_EXPIRES_IN,
       });
 
       return res.status(HTTP_STATUS.SUCCESS).json({
@@ -194,7 +194,7 @@ const customerController = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: constants.COOKIE_EXPIRES_IN,
+        maxAge: JWT.COOKIE_EXPIRES_IN,
       });
 
       res.status(HTTP_STATUS.SUCCESS).json({

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const { JWT, SALT_ROUNDS } = require('../configs/constants');
+const { JWT, SALT_ROUNDS } = require('#configs/constants');
 
 const generateToken = (payload) => {
   return jwt.sign(payload, JWT.SECRET, { expiresIn: JWT.ACCESS_TOKEN_EXPIRES_IN });

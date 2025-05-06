@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { HTTP_STATUS, ERROR_MESSAGE, JWT, ROLES } = require('../configs/constants');
+
+const { HTTP_STATUS, ERROR_MESSAGE, JWT, ROLES } = require('#configs/constants');
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;

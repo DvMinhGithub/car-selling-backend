@@ -1,11 +1,11 @@
 const express = require('express');
 const routes = express.Router();
 
-const adminRouter = require('./v1/adminRoute');
-const billRouter = require('./v1/billRoute');
-const carRouter = require('./v1/carRoute');
-const cartRouter = require('./v1/cartRoute');
-const customerRouter = require('./v1/customerRoute');
+const adminRouter = require('./v1/admin.route');
+const billRouter = require('./v1/bill.route');
+const carRouter = require('./v1/car.route');
+const cartRouter = require('./v1/cart.route');
+const customerRouter = require('./v1/customer.route');
 
 routes.use('/api/v1/admins', adminRouter);
 routes.use('/api/v1/bills', billRouter);

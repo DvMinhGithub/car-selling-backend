@@ -1,5 +1,5 @@
-const billModel = require('../models/bill');
-const customerModel = require('../models/customer');
+const billModel = require('#models/bill');
+const customerModel = require('#models/customer');
 
 const billController = {
   getAllBill: async (req, res) => {
@@ -22,7 +22,7 @@ const billController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
-  // tạo bill mới khi thanh toán
+
   createBill: async (req, res) => {
     try {
       const { idCustomer } = req.params;

@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 
-const adminModel = require('../models/admin');
-const { generateToken, comparePassword } = require('../utils/helpers');
+const adminModel = require('#models/admin');
+const { generateToken, comparePassword } = require('#utils/helpers');
 
 let arrRefreshToken = [];
 

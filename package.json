@@ -50,5 +50,14 @@
     "*.{js,jsx,ts,tsx,json,css,scss,md}": [
       "prettier --write"
     ]
+  },
+  "imports": {
+    "#*": "./src/*.js",
+    "#controllers/*": "./src/controllers/*.js",
+    "#models/*": "./src/models/*.js",
+    "#middlewares/*": "./src/middlewares/*.js",
+    "#routes/*": "./src/routes/*.js",
+    "#utils/*": "./src/utils/*.js",
+    "#configs/*": "./src/configs/*.js"
   }
 }

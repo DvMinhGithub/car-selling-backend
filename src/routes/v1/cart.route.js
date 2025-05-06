@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
-const { verifyTokenCustomer } = require('../../middlewares/verify');
-const cartController = require('../../controllers/cartController');
+const cartController = require('#controllers/cartController');
+
+const { verifyTokenCustomer } = require('#middlewares/auth.middleware');
 
 router.get('/:idCustomer', verifyTokenCustomer, cartController.getCartItems);
 

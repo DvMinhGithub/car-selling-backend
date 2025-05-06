@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { verifyTokenCustomer } = require('../../middlewares/verify');
-const billController = require('../../controllers/billController');
+
+const { verifyTokenCustomer } = require('#middlewares/auth.middleware');
+
+const billController = require('#controllers/billController');
 
 router.get('/:idCustomer', verifyTokenCustomer, billController.getAllBill);
 router.get('/:id', verifyTokenCustomer, billController.getBillDetail);

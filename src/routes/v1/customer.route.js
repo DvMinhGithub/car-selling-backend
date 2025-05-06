@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { verifyTokenCustomer } = require('../../middlewares/verify');
-const customerController = require('../../controllers/customerController');
-const uploadFile = require('../../middlewares/upload');
+
+const { verifyTokenCustomer } = require('#middlewares/auth.middleware');
+const uploadFile = require('#middlewares/upload.middleware');
+
+const customerController = require('#controllers/customerController');
 
 router.post('/register', customerController.register);
 

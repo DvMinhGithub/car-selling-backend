@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-const { HTTP_STATUS, UPLOAD } = require('../configs/constants');
+const { HTTP_STATUS, UPLOAD } = require('#configs/constants');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
