@@ -1,53 +1,81 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
+const { HTTP_STATUS, ERROR_MESSAGE, JWT, ROLES } = require('../configs/constants');
+
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "Bạn chưa đăng nhập" });
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      success: false,
+      message: ERROR_MESSAGE.NOT_LOGGED_IN,
+    });
+  }
+
+  const token = authHeader.split(' ')[1];
   try {
-    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN);
-    req.data = decodedToken.data;
+    const decoded = jwt.verify(token, JWT.SECRET);
+    req.user = decoded;
     next();
   } catch (error) {
-    res.status(403).json({ message: "Token không hợp lệ!" });
+    console.error('Token verification error:', error);
+
+    const message =
+      error.name === 'TokenExpiredError' ? 'Token đã hết hạn' : ERROR_MESSAGE.INVALID_TOKEN;
+
+    res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      success: false,
+      message,
+    });
   }
 };
-const verifyTokenCustomer = (req, res, next) => {
-  verifyToken(req, res, () => {
-    if (req.data.role.includes("customer")) {
-      next();
-    } else {
-      res.status(403).json("You're not allowed to do that!");
+
+const verifyRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user?.role) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: ERROR_MESSAGE.NOT_LOGGED_IN,
+      });
     }
-  });
-};
-const verifyTokenAdmin = (req, res, next) => {
-  verifyToken(req, res, () => {
-    if (req.data.role.includes("admin")) {
-      next();
-    } else {
-      res.status(403).json("You're not allowed to do that!");
+
+    const hasPermission = allowedRoles.some((role) => req.user.role.includes(role));
+
+    if (!hasPermission) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        success: false,
+        message: ERROR_MESSAGE.ACCESS_DENIED,
+      });
     }
-  });
+
+    next();
+  };
 };
-const verifyTokenAllRole = (req, res, next) => {
-  verifyToken(req, res, () => {
-    if (req.data.role.includes("admin") || req.data.role.includes("customer")) {
-      next();
-    } else {
-      res.status(403).json("You're not allowed to do that!");
-    }
-  });
-};
+
+const verifyTokenCustomer = verifyRole(ROLES.CUSTOMER);
+const verifyTokenAdmin = verifyRole(ROLES.ADMIN);
+const verifyTokenAllRole = verifyRole(ROLES.ADMIN, ROLES.CUSTOMER);
+
 const verifyRefreshToken = (refreshToken) => {
   try {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN);
-    return decoded.data._id;
-  } catch (err) {
-    return null;
+    const decoded = jwt.verify(refreshToken, JWT.REFRESH_SECRET);
+    return {
+      userId: decoded._id,
+      isValid: true,
+    };
+  } catch (error) {
+    console.error('Refresh token verification error:', error);
+    return {
+      isValid: false,
+      error: error.name === 'TokenExpiredError' ? 'Token đã hết hạn' : ERROR_MESSAGE.INVALID_TOKEN,
+    };
   }
 };
+
 module.exports = {
-  verifyTokenAdmin,
+  verifyToken,
+  verifyRole,
   verifyTokenCustomer,
+  verifyTokenAdmin,
   verifyTokenAllRole,
   verifyRefreshToken,
 };

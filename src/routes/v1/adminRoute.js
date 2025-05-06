@@ -1,17 +1,18 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const {verifyTokenAdmin} = require('../../middlewares/verify')
-const adminController = require("../../controllers/adminController");
-const uploadFile = require("../../middlewares/upload");
 
-router.post("/", adminController.createAdminAcc);
+const { verifyTokenAdmin } = require('../../middlewares/verify');
+const adminController = require('../../controllers/adminController');
+const uploadFile = require('../../middlewares/upload');
 
-router.put("/:id",verifyTokenAdmin, uploadFile, adminController.updateAdmin);
+router.post('/', adminController.createAdminAcc);
 
-router.post("/login",adminController.login)
+router.put('/:id', verifyTokenAdmin, uploadFile, adminController.updateAdmin);
 
-router.post("/refresToken",adminController.refreshToken)
+router.post('/login', adminController.login);
 
-router.post("/logout",adminController.logOut)
+router.post('/refresToken', adminController.refreshToken);
+
+router.post('/logout', adminController.logOut);
 
 module.exports = router;

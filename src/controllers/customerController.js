@@ -1,184 +1,247 @@
-const customerModel = require("../models/customer");
-const bcrypt = require("bcrypt");
-const cartModel = require("../models/cart");
-const fs = require("fs");
-const path = require("path");
-const jwt = require("jsonwebtoken");
-const { generateAccessToken, generateRefreshToken } = require("../utils/auth");
+const customerModel = require('../models/customer');
+const bcrypt = require('bcrypt');
+const fs = require('fs');
+const cartModel = require('../models/cart');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const { generateToken, verifyToken } = require('../utils/helpers');
+const { HTTP_STATUS } = require('../configs/constants');
+const constants = require('../configs/constants');
 
 const customerController = {
   register: async (req, res) => {
     try {
       const { userName, phoneNumber, email, address, password } = req.body;
 
-      const checkEmail = await customerModel.findOne({ email });
-      if (checkEmail) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Email đã tồn tại" });
-      } else {
-        const hashPassword = await bcrypt.hash(password, 10);
-        const customerAcc = await customerModel.create({
-          userName,
-          email,
-          phoneNumber,
-          address,
-          password: hashPassword,
-        });
-
-        //Khi tạo 1 customer mới sẽ tạo luôn 1 giỏ hàng cho customer đấy
-        await cartModel.create({ idCustomer: customerAcc._id });
-
-        return res.status(200).json({
-          success: true,
-          message: "Đăng ký thành công",
-          data: customerAcc,
+      const existingCustomer = await customerModel.findOne({ email });
+      if (existingCustomer) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Email đã tồn tại',
         });
       }
+
+      const saltRounds = 10;
+      const hashPassword = await bcrypt.hash(password, saltRounds);
+
+      const customerAcc = await customerModel.create({
+        userName,
+        email,
+        phoneNumber,
+        address,
+        password: hashPassword,
+      });
+
+      await cartModel.create({ idCustomer: customerAcc._id });
+
+      const customerResponse = customerAcc.toObject();
+      delete customerResponse.password;
+
+      return res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        message: 'Đăng ký thành công',
+        data: customerResponse,
+      });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      console.error('Registration error:', error);
+      res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
+
   updateCustomer: async (req, res) => {
     try {
       const { id } = req.params;
+      console.log(req.file);
 
       const currentCustomer = await customerModel.findById(id);
-      const currentAvatarUrl = currentCustomer.avatar;
+      if (!currentCustomer) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'Không tìm thấy khách hàng',
+        });
+      }
 
-      const newAvatarUrl =
-        req.file &&
-        `http://localhost:${process.env.PORT}/images/${req.file.filename}`;
+      let newAvatarUrl;
+      if (req.file) {
+        newAvatarUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
 
-      const updateData = { ...req.body };
-      if (newAvatarUrl) {
-        updateData.avatar = newAvatarUrl;
-
-        if (currentAvatarUrl && currentAvatarUrl !== newAvatarUrl) {
-          const oldAvatarPath = path.join(
-            __dirname,
-            "../../public",
-            currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, "")
-          );
-          if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
+        if (currentCustomer.avatar) {
+          try {
+            const oldAvatarPath = path.join(
+              __dirname,
+              '../../public',
+              new URL(currentCustomer.avatar).pathname,
+            );
+            await fs.unlink(oldAvatarPath);
+          } catch (err) {
+            console.error('Error deleting old avatar:', err);
+          }
         }
       }
+
+      const updateData = { ...req.body };
+      if (newAvatarUrl) updateData.avatar = newAvatarUrl;
 
       const updatedCustomer = await customerModel.findByIdAndUpdate(
         id,
         { $set: updateData },
-        { new: true }
+        { new: true },
       );
 
-      res.status(200).json({
+      res.status(HTTP_STATUS.SUCCESS).json({
         success: true,
-        message: "Cập nhật thành công",
+        message: 'Cập nhật thành công',
         data: updatedCustomer,
       });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      console.error('Update error:', error);
+      res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
+
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
+
       const user = await customerModel.findOne({ email });
       if (!user) {
-        return res
-          .status(401)
-          .json({ success: false, message: "Email không tồn tại" });
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+        });
       }
-      const checkPassword = await bcrypt.compare(password, user.password);
-      if (!checkPassword) {
-        return res
-          .status(401)
-          .json({ success: false, message: "Mật khẩu không đúng" });
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+        });
       }
+
       const userData = {
         _id: user._id,
         userName: user.userName,
         email: user.email,
         role: user.role,
       };
-      const accessToken = generateAccessToken(userData);
-      const refreshToken = generateRefreshToken(userData);
+
+      const accessToken = generateToken(userData);
+      const refreshToken = generateToken(userData);
+
       user.refreshToken = refreshToken;
       await user.save();
-      return res.status(200).json({
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: constants.COOKIE_EXPIRES_IN,
+      });
+
+      return res.status(HTTP_STATUS.SUCCESS).json({
         success: true,
         userData,
         accessToken,
-        refreshToken,
       });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      console.error('Login error:', error);
+      res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
 
   refreshToken: async (req, res) => {
     try {
-      const { refreshToken } = req.body;
+      const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
       if (!refreshToken) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Không tìm thấy refreshToken" });
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Yêu cầu xác thực',
+        });
       }
 
-      const user = await customerModel.findOne({ refreshToken });
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "RefreshToken không hợp lệ" });
+      const decoded = verifyToken(refreshToken);
+
+      const user = await customerModel.findById(decoded._id);
+      if (!user || user.refreshToken !== refreshToken) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Phiên đăng nhập không hợp lệ',
+        });
       }
 
-      jwt.verify(refreshToken, process.env.REFRESH_TOKEN, async (err, data) => {
-        if (err) {
-          return res
-            .status(401)
-            .json({ success: false, message: "Không được phép" });
-        }
+      const userData = {
+        _id: user._id,
+        userName: user.userName,
+        email: user.email,
+        role: user.role,
+      };
 
-        const userData = {
-          _id: user._id,
-          userName: user.userName,
-          email: user.email,
-          role: user.role,
-        };
-        const newAccessToken = generateAccessToken(userData);
-        const newRefreshToken = generateRefreshToken(userData);
+      const newAccessToken = generateToken(userData);
+      const newRefreshToken = generateToken(userData);
 
-        await customerModel.findByIdAndUpdate(user._id, {
-          refreshToken: newRefreshToken,
-        });
+      user.refreshToken = newRefreshToken;
+      await user.save();
 
-        res.status(200).json({
-          success: true,
-          data: {
-            accessToken: newAccessToken,
-            refreshToken: newRefreshToken,
-          },
-        });
+      res.cookie('refreshToken', newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: constants.COOKIE_EXPIRES_IN,
+      });
+
+      res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        accessToken: newAccessToken,
       });
     } catch (error) {
-      console.error(error);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      console.error('Refresh token error:', error);
+
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Token không hợp lệ',
+        });
+      }
+
+      res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: 'Lỗi hệ thống',
+      });
     }
   },
 
-  logOut: async (req, res, next) => {
+  logout: async (req, res) => {
     try {
       const refreshToken = req.cookies.refreshToken;
 
-      // clear cookie khi logout
-      arrRefreshToken = arrRefreshToken.filter(
-        (token) => token !== refreshToken
-      );
-      res.clearCookie("refreshToken");
-      res.status(200).json({ success: true });
-    } catch (err) {
-      next(err);
+      if (refreshToken) {
+        await customerModel.findOneAndUpdate({ refreshToken }, { $set: { refreshToken: null } });
+      }
+
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
+
+      res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        message: 'Đăng xuất thành công',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
 };

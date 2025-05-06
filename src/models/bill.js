@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
-const moment = require("moment-timezone");
-const dateVN = moment.tz(Date.now(), "Asia/Bangkok");
+const mongoose = require('mongoose');
+const moment = require('moment-timezone');
+const dateVN = moment.tz(Date.now(), 'Asia/Bangkok');
 const billModel = new mongoose.Schema({
   timeOder: {
     type: Date,
@@ -11,14 +11,14 @@ const billModel = new mongoose.Schema({
   },
   idCustomer: {
     type: mongoose.Types.ObjectId,
-    ref: "customer",
+    ref: 'customer',
     required: true,
   },
   listProduct: [
     {
       product: {
         type: mongoose.Types.ObjectId,
-        ref: "product",
+        ref: 'product',
       },
       amountProduct: {
         type: Number,
@@ -28,4 +28,4 @@ const billModel = new mongoose.Schema({
   ],
 });
 
-module.exports = mongoose.model("bill", billModel);
+module.exports = mongoose.model('bill', billModel);

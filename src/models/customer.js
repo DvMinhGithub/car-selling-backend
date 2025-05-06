@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const customerModel = new mongoose.Schema({
   userName: {
     type: String,
@@ -17,7 +17,7 @@ const customerModel = new mongoose.Schema({
   },
   idCart: {
     type: mongoose.Types.ObjectId,
-    ref: "cart",
+    ref: 'cart',
   },
   avatar: {
     type: String,
@@ -26,18 +26,18 @@ const customerModel = new mongoose.Schema({
   listOrder: [
     {
       type: mongoose.Types.ObjectId,
-      ref: "bill",
+      ref: 'bill',
     },
   ],
   role: {
     type: String,
-    default: "customer",
+    default: 'customer',
   },
   reviewCustomer: [
     {
       idProduct: {
         type: mongoose.Types.ObjectId,
-        ref: "car",
+        ref: 'car',
       },
       review: {
         type: String,
@@ -47,4 +47,4 @@ const customerModel = new mongoose.Schema({
   refreshToken: { type: String },
 });
 
-module.exports = mongoose.model("customer", customerModel);
+module.exports = mongoose.model('customer', customerModel);

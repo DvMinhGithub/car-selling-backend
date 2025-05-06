@@ -6,14 +6,14 @@
 
 ## 🛠 Technologies Used
 
-| Category       | Technologies                          |
-|----------------|---------------------------------------|
-| **Core**       | Node.js, Express                      |
-| **Database**   | MongoDB, Mongoose                     |
-| **Auth**       | JWT, Bcrypt                           |
-| **Security**   | Helmet, CORS                          |
-| **File**       | Multer                                |  
-| **Logging**    | Morgan                                |
+| Category     | Technologies      |
+| ------------ | ----------------- |
+| **Core**     | Node.js, Express  |
+| **Database** | MongoDB, Mongoose |
+| **Auth**     | JWT, Bcrypt       |
+| **Security** | Helmet, CORS      |
+| **File**     | Multer            |
+| **Logging**  | Morgan            |
 
 ## 💻 Installation
 
@@ -33,6 +33,7 @@ npm run start
 ```
 
 ## Configuration
+
 ```bash
 # .env.example
 PORT = 3000
@@ -42,12 +43,13 @@ REFRESH_TOKEN =  your_refresh_token
 ```
 
 ## 📂 Project Structure
+
 ```bash
 src/
-├── configs/     
-├── controllers/       
-├── middlewares/       
-├── models/            
-├── routes/            
-└── utils/             
+├── configs/
+├── controllers/
+├── middlewares/
+├── models/
+├── routes/
+└── utils/
 ```

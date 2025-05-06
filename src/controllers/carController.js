@@ -1,6 +1,6 @@
-const carModel = require("../models/car");
-const fs = require("fs");
-const path = require("path");
+const carModel = require('../models/car');
+const fs = require('fs');
+const path = require('path');
 const carController = {
   getAllCar: async (req, res) => {
     try {
@@ -41,8 +41,7 @@ const carController = {
       const currentAvatarUrl = currentCar.carImage;
 
       const newAvatarUrl =
-        req.file &&
-        `http://localhost:${process.env.PORT}/images/${req.file.filename}`;
+        req.file && `http://localhost:${process.env.PORT}/images/${req.file.filename}`;
 
       if (newAvatarUrl) {
         updateData.carImage = newAvatarUrl;
@@ -50,18 +49,14 @@ const carController = {
         if (currentAvatarUrl && currentAvatarUrl !== newAvatarUrl) {
           const oldAvatarPath = path.join(
             __dirname,
-            "../../public",
-            currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, "")
+            '../../public',
+            currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, ''),
           );
           if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
         }
       }
 
-      const carUpdate = await carModel.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true }
-      );
+      const carUpdate = await carModel.findByIdAndUpdate(id, { $set: updateData }, { new: true });
       res.status(200).json({ success: true, data: carUpdate });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

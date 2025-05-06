@@ -1,9 +1,9 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const cartModel = new mongoose.Schema({
   idCustomer: {
     type: mongoose.Types.ObjectId,
-    ref: "customer",
+    ref: 'customer',
   },
   totalPrice: {
     type: Number,
@@ -13,7 +13,7 @@ const cartModel = new mongoose.Schema({
     {
       idProduct: {
         type: mongoose.Types.ObjectId,
-        ref: "car",
+        ref: 'car',
       },
 
       //Số lượng
@@ -25,4 +25,4 @@ const cartModel = new mongoose.Schema({
   ],
 });
 
-module.exports = mongoose.model("cart", cartModel);
+module.exports = mongoose.model('cart', cartModel);

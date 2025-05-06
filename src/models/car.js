@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const carModel = new mongoose.Schema({
   name: {
     type: String,
@@ -40,7 +40,7 @@ const carModel = new mongoose.Schema({
     {
       idCustomer: {
         type: mongoose.Types.ObjectId,
-        ref: "customer",
+        ref: 'customer',
       },
       nameCustomer: {
         type: String,
@@ -52,4 +52,4 @@ const carModel = new mongoose.Schema({
   ],
 });
 
-module.exports = mongoose.model("car", carModel);
+module.exports = mongoose.model('car', carModel);

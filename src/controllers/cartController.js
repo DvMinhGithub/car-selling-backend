@@ -1,15 +1,12 @@
-const cartModel = require("../models/cart");
-const carModel = require("../models/car");
-const mongoose = require("mongoose");
+const cartModel = require('../models/cart');
+const carModel = require('../models/cart');
 
 const cartController = {
   getCartItems: async (req, res, next) => {
     try {
       const idCustomer = req.params.idCustomer;
 
-      const data = await cartModel
-        .findOne({ idCustomer })
-        .populate("listProduct.idProduct");
+      const data = await cartModel.findOne({ idCustomer }).populate('listProduct.idProduct');
 
       return res.status(200).json({ data });
     } catch (error) {
@@ -32,15 +29,11 @@ const cartController = {
       }
 
       let cart = await cartModel
-        .findOneAndUpdate(
-          { idCustomer },
-          { listProduct, totalPrice },
-          { new: true, upsert: true }
-        )
-        .populate("listProduct.idProduct");
+        .findOneAndUpdate({ idCustomer }, { listProduct, totalPrice }, { new: true, upsert: true })
+        .populate('listProduct.idProduct');
 
       res.status(201).json({
-        message: "Thêm sản phẩm vào giỏ hàng thành công",
+        message: 'Thêm sản phẩm vào giỏ hàng thành công',
         data: cart,
       });
     } catch (error) {
@@ -56,7 +49,7 @@ const cartController = {
       const cartReset = await cartModel.findOneAndUpdate(
         { idCustomer },
         { listProduct: [], totalPrice: 0 },
-        { new: true }
+        { new: true },
       );
       res.status(200).json({ success: true, data: cartReset });
     } catch (error) {

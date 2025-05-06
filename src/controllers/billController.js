@@ -1,15 +1,11 @@
-const billModel = require("../models/bill");
-const cart = require("../models/cart");
-const customerModel = require("../models/customer");
-const cartModel = require("../models/cart");
+const billModel = require('../models/bill');
+const customerModel = require('../models/customer');
 
 const billController = {
   getAllBill: async (req, res) => {
     try {
       const { idCustomer } = req.params; //Id của khách hàng
-      const customer = await customerModel
-        .findById(idCustomer)
-        .populate("listOrder");
+      const customer = await customerModel.findById(idCustomer).populate('listOrder');
       const listOrder = customer.listOrder;
       res.status(200).json({ success: true, data: listOrder });
     } catch (error) {
@@ -34,7 +30,7 @@ const billController = {
       await customerModel.findByIdAndUpdate(
         idCustomer,
         { $set: { $push: { listOrder: billCreated._id } } },
-        { new: true }
+        { new: true },
       );
       res.status(200).json({ success: true, data: billCreated });
     } catch (error) {

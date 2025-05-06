@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const adminModel = new mongoose.Schema({
   userName: {
@@ -11,11 +11,11 @@ const adminModel = new mongoose.Schema({
     type: String,
   },
   role: {
-    type:String,
-    default: "admin",
+    type: String,
+    default: 'admin',
   },
   avatar: {
     type: String,
   },
 });
-module.exports = mongoose.model("admin", adminModel);
+module.exports = mongoose.model('admin', adminModel);
