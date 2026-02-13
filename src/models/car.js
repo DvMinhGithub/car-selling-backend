@@ -1,4 +1,31 @@
 const mongoose = require('mongoose');
+
+const carReviewSchema = new mongoose.Schema(
+  {
+    idCustomer: {
+      type: mongoose.Types.ObjectId,
+      ref: 'customer',
+    },
+    nameCustomer: {
+      type: String,
+      trim: true,
+    },
+    review: {
+      type: String,
+      trim: true,
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 5,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
 const carModel = new mongoose.Schema({
   name: {
     type: String,
@@ -36,20 +63,7 @@ const carModel = new mongoose.Schema({
   },
 
   //Đánh giá từ khách hàng
-  reviewsCustomer: [
-    {
-      idCustomer: {
-        type: mongoose.Types.ObjectId,
-        ref: 'customer',
-      },
-      nameCustomer: {
-        type: String,
-      },
-      review: {
-        type: String,
-      },
-    },
-  ],
+  reviewsCustomer: [carReviewSchema],
 });
 
 module.exports = mongoose.model('car', carModel);

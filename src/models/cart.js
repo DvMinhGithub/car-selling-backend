@@ -4,6 +4,7 @@ const cartModel = new mongoose.Schema({
   idCustomer: {
     type: mongoose.Types.ObjectId,
     ref: 'customer',
+    unique: true,
   },
   totalPrice: {
     type: Number,
