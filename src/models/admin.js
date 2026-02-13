@@ -17,5 +17,8 @@ const adminModel = new mongoose.Schema({
   avatar: {
     type: String,
   },
+  refreshToken: {
+    type: String,
+  },
 });
 module.exports = mongoose.model('admin', adminModel);

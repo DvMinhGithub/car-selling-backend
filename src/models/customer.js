@@ -12,6 +12,42 @@ const customerModel = new mongoose.Schema({
   address: {
     type: String,
   },
+  addresses: [
+    {
+      receiverName: {
+        type: String,
+        required: true,
+      },
+      phoneNumber: {
+        type: String,
+        required: true,
+      },
+      addressLine: {
+        type: String,
+        required: true,
+      },
+      ward: {
+        type: String,
+        default: '',
+      },
+      district: {
+        type: String,
+        default: '',
+      },
+      city: {
+        type: String,
+        default: '',
+      },
+      note: {
+        type: String,
+        default: '',
+      },
+      isDefault: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  ],
   password: {
     type: String,
   },
@@ -41,6 +77,12 @@ const customerModel = new mongoose.Schema({
       },
       review: {
         type: String,
+      },
+      rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: 5,
       },
     },
   ],

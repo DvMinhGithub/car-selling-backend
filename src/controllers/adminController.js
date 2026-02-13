@@ -1,141 +1,320 @@
-const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
 const adminModel = require('#models/admin');
-const { generateToken, comparePassword } = require('#utils/helpers');
+const { APP, COOKIE, HTTP_STATUS, JWT, ROLES } = require('#configs/constants');
+const {
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+  hashPassword,
+  verifyRefreshToken,
+} = require('#utils/helpers');
 
-let arrRefreshToken = [];
+const baseRefreshCookieOptions = {
+  httpOnly: COOKIE.HTTP_ONLY,
+  secure: COOKIE.SECURE,
+  path: COOKIE.PATH,
+  sameSite: COOKIE.SAME_SITE,
+};
+
+const getRefreshCookieOptions = (remember) =>
+  remember
+    ? { ...baseRefreshCookieOptions, maxAge: JWT.COOKIE_EXPIRES_IN }
+    : baseRefreshCookieOptions;
+
+const toAuthPayload = (admin) => ({
+  _id: admin._id.toString(),
+  userName: admin.userName,
+  email: admin.email,
+  role: admin.role || ROLES.ADMIN,
+});
+
+const resolveBaseUrl = (req) => APP.BASE_URL || `${req.protocol}://${req.get('host')}`;
+
+const resolveStoredPath = (fileUrl) => {
+  try {
+    return new URL(fileUrl).pathname.replace(/^\/+/, '');
+  } catch {
+    return String(fileUrl)
+      .replace(/^https?:\/\/[^/]+\/?/, '')
+      .replace(/^\/+/, '');
+  }
+};
+
+const toPublicAdmin = (admin) => {
+  if (!admin) return null;
+  const adminObj = admin.toObject ? admin.toObject() : admin;
+  delete adminObj.password;
+  return adminObj;
+};
+
+const clearRefreshCookie = (res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: COOKIE.HTTP_ONLY,
+    secure: COOKIE.SECURE,
+    path: COOKIE.PATH,
+    sameSite: COOKIE.SAME_SITE,
+  });
+};
 
 const adminController = {
   createAdminAcc: async (req, res) => {
     try {
       const { userName, email, password } = req.body;
-      const checkEmail = await adminModel.findOne({ email });
-
-      if (checkEmail) {
-        return res.status(404).json({ success: false, message: 'Tên đăng nhập tồn tại' });
-      } else {
-        const hashPassword = hashPassword(password);
-        await adminModel.create({ userName, email, password: hashPassword });
-        return res.status(200).json({ success: true, message: 'Tạo tài khoản thành công' });
+      if (!userName || !email || !password) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Vui lòng nhập userName, email và password',
+        });
       }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const existed = await adminModel.findOne({ email: normalizedEmail });
+      if (existed) {
+        return res.status(HTTP_STATUS.CONFLICT).json({
+          success: false,
+          message: 'Email đã tồn tại',
+        });
+      }
+
+      const passwordHashed = await hashPassword(password);
+      const adminCreated = await adminModel.create({
+        userName,
+        email: normalizedEmail,
+        password: passwordHashed,
+        role: ROLES.ADMIN,
+      });
+
+      return res.status(HTTP_STATUS.CREATED).json({
+        success: true,
+        message: 'Tạo tài khoản admin thành công',
+        data: toPublicAdmin(adminCreated),
+      });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
+
+  getMe: async (req, res) => {
+    try {
+      const admin = await adminModel.findById(req.user?._id).select('-password');
+      if (!admin) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'Không tìm thấy admin',
+        });
+      }
+      return res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        message: 'Lấy thông tin admin thành công',
+        data: admin,
+      });
+    } catch (error) {
+      return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+
   updateAdmin: async (req, res) => {
     try {
-      const { id } = req.params;
-      const currentAdmin = await adminModel.findById(id).select('-password');
-      const currentAvatarUrl = currentAdmin.avatar;
+      const id = req.params.id || req.user?._id;
+      if (req.user?.role !== ROLES.ADMIN) {
+        return res.status(HTTP_STATUS.FORBIDDEN).json({
+          success: false,
+          message: 'Bạn không có quyền cập nhật admin',
+        });
+      }
 
-      const newAvatarUrl =
-        req.file && `http://localhost:${process.env.PORT}/images/${req.file.filename}`;
+      const currentAdmin = await adminModel.findById(id);
+      if (!currentAdmin) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'Không tìm thấy admin',
+        });
+      }
+
       const updateData = { ...req.body };
 
-      if (newAvatarUrl) {
+      if (updateData.email !== undefined) {
+        const normalizedEmail = String(updateData.email).trim().toLowerCase();
+        const duplicate = await adminModel.findOne({
+          email: normalizedEmail,
+          _id: { $ne: id },
+        });
+        if (duplicate) {
+          return res.status(HTTP_STATUS.CONFLICT).json({
+            success: false,
+            message: 'Email đã tồn tại',
+          });
+        }
+        updateData.email = normalizedEmail;
+      }
+
+      if (updateData.password !== undefined) {
+        updateData.password = await hashPassword(String(updateData.password));
+      }
+
+      if (req.file) {
+        const uploadPublicPath = APP.UPLOAD_PUBLIC_PATH.replace(/^\/+/, '');
+        const baseUrl = resolveBaseUrl(req);
+        const newAvatarUrl = `${baseUrl}/${uploadPublicPath}/${req.file.filename}`;
         updateData.avatar = newAvatarUrl;
 
-        if (currentAvatarUrl && currentAvatarUrl !== newAvatarUrl) {
+        if (currentAdmin.avatar && currentAdmin.avatar !== newAvatarUrl) {
           const oldAvatarPath = path.join(
-            __dirname,
-            '../../public',
-            currentAvatarUrl.replace(`http://localhost:${process.env.PORT}`, ''),
+            process.cwd(),
+            APP.STATIC_DIR,
+            resolveStoredPath(currentAdmin.avatar).replace(/^public\/+/, ''),
           );
           if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
         }
       }
 
-      const updatedAdmin = await adminModel.findByIdAndUpdate(id, updateData, {
-        new: true,
-      });
+      const updatedAdmin = await adminModel
+        .findByIdAndUpdate(id, updateData, { new: true })
+        .select('-password');
 
-      res.status(200).json({
+      return res.status(HTTP_STATUS.SUCCESS).json({
         success: true,
-        message: 'Cập nhật thành công',
+        message: 'Cập nhật admin thành công',
         data: updatedAdmin,
       });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
+
   login: async (req, res) => {
     try {
-      const { email, password } = req.body;
-      const user = await adminModel.findOne({ email });
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'Tên đăng nhập không tồn tại' });
+      const { email, password, remember } = req.body;
+      if (!email || !password) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Vui lòng nhập email và password',
+        });
       }
-      const checkPassword = comparePassword(password, user.password);
-      if (!checkPassword) {
-        return res.status(404).json({ success: false, message: 'Mật khẩu không đúng' });
-      }
-      const token = generateToken(user);
-      const refreshToken = generateToken(user);
-      arrRefreshToken.push(refreshToken);
-      const userData = await adminModel.findById(user._id).select('-password');
 
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: false,
-        path: '/',
-        sameSite: 'strict',
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const user = await adminModel.findOne({ email: normalizedEmail });
+      if (!user) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Email hoặc mật khẩu không đúng',
+        });
+      }
+
+      const checkPassword = await comparePassword(password, user.password);
+      if (!checkPassword) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Email hoặc mật khẩu không đúng',
+        });
+      }
+
+      const authPayload = toAuthPayload(user);
+      const accessToken = generateAccessToken(authPayload);
+      const rememberSession = Boolean(remember);
+      const refreshToken = generateRefreshToken({ ...authPayload, remember: rememberSession });
+
+      user.refreshToken = refreshToken;
+      await user.save();
+
+      res.cookie('refreshToken', refreshToken, getRefreshCookieOptions(rememberSession));
+      return res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        message: 'Đăng nhập admin thành công',
+        accessToken,
+        refreshToken,
+        data: toPublicAdmin(user),
       });
-      return res.status(200).json({ success: true, token, user: userData });
     } catch (error) {
-      return res.status(500).json({ message: error.message });
+      return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
 
   refreshToken: async (req, res) => {
     try {
-      const refreshToken = req.cookie.refreshToken;
-
+      const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
       if (!refreshToken) {
-        return res.status(404).json({ success: false, message: 'Bạn không có quyền truy cập' });
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Thiếu refresh token',
+        });
       }
-      if (!arrRefreshToken.includes(refreshToken)) {
-        return res.status(404).json({ success: false, message: 'Bạn không có quyền truy cập' });
-      }
-      jwt.verify(refreshToken, process.env.REFRESH_TOKEN, (err, data, next) => {
-        if (err) {
-          next(err);
-        }
-        arrRefreshToken = arrRefreshToken.filter((token) => token !== refreshToken);
-        const newAccessToken = generateToken(data);
-        const newRefreshToken = generateToken(data);
 
-        arrRefreshToken.push(newRefreshToken);
-        res.cookie('refreshToken', newRefreshToken, {
-          httpOnly: true,
-          secure: false,
-          path: '/',
-          sameSite: 'strict',
+      const decoded = verifyRefreshToken(refreshToken);
+      const rememberSession = decoded?.remember !== undefined ? Boolean(decoded.remember) : true;
+      const user = await adminModel.findById(decoded._id);
+      if (!user || user.refreshToken !== refreshToken) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Refresh token không hợp lệ',
         });
-        res.status(200).json({
-          success: true,
-          data: [
-            {
-              accessToken: newAccessToken,
-              refreshToken: newRefreshToken,
-            },
-          ],
-        });
+      }
+
+      const authPayload = toAuthPayload(user);
+      const newAccessToken = generateAccessToken(authPayload);
+      const newRefreshToken = generateRefreshToken({ ...authPayload, remember: rememberSession });
+
+      user.refreshToken = newRefreshToken;
+      await user.save();
+
+      res.cookie('refreshToken', newRefreshToken, getRefreshCookieOptions(rememberSession));
+      return res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        message: 'Làm mới token thành công',
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
       });
     } catch (error) {
-      res.send(error);
+      if (error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Refresh token không hợp lệ',
+        });
+      }
+      return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
-  logOut: async (req, res, next) => {
-    try {
-      const refreshToken = req.cookies.refreshToken;
 
-      arrRefreshToken = arrRefreshToken.filter((token) => token !== refreshToken);
-      res.clearCookie('refreshToken');
-      res.status(200).json({ success: true });
-    } catch (err) {
-      next(err);
+  logOut: async (req, res) => {
+    try {
+      const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+      const userId = req.user?._id;
+
+      if (refreshToken) {
+        await adminModel.findOneAndUpdate({ refreshToken }, { $set: { refreshToken: null } });
+      } else if (userId) {
+        await adminModel.findByIdAndUpdate(userId, { $set: { refreshToken: null } });
+      }
+
+      clearRefreshCookie(res);
+
+      return res.status(HTTP_STATUS.SUCCESS).json({
+        success: true,
+        message: 'Đăng xuất thành công',
+      });
+    } catch (error) {
+      return res.status(HTTP_STATUS.INTERNAL_ERROR).json({
+        success: false,
+        message: error.message,
+      });
     }
   },
 };
