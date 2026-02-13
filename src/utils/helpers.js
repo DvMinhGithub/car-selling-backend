@@ -1,14 +1,22 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const { JWT, SALT_ROUNDS } = require('#configs/constants');
+const { JWT, SECURITY } = require('#configs/constants');
 
-const generateToken = (payload) => {
+const generateAccessToken = (payload) => {
   return jwt.sign(payload, JWT.SECRET, { expiresIn: JWT.ACCESS_TOKEN_EXPIRES_IN });
 };
 
+const generateRefreshToken = (payload) => {
+  return jwt.sign(payload, JWT.REFRESH_SECRET, { expiresIn: JWT.REFRESH_TOKEN_EXPIRES_IN });
+};
+
+const verifyRefreshToken = (token) => {
+  return jwt.verify(token, JWT.REFRESH_SECRET);
+};
+
 const hashPassword = async (password) => {
-  return await bcrypt.hash(password, SALT_ROUNDS);
+  return await bcrypt.hash(password, SECURITY.SALT_ROUNDS);
 };
 
 const comparePassword = async (password, hashedPassword) => {
@@ -25,7 +33,9 @@ const formatResponse = (success, message, data = null, error = null) => {
 };
 
 module.exports = {
-  generateToken,
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
   hashPassword,
   comparePassword,
   formatResponse,

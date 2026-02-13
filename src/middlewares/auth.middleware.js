@@ -32,23 +32,26 @@ const verifyToken = (req, res, next) => {
 
 const verifyRole = (...allowedRoles) => {
   return (req, res, next) => {
-    if (!req.user?.role) {
-      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        success: false,
-        message: ERROR_MESSAGE.NOT_LOGGED_IN,
-      });
-    }
+    verifyToken(req, res, () => {
+      if (!req.user?.role) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: ERROR_MESSAGE.NOT_LOGGED_IN,
+        });
+      }
 
-    const hasPermission = allowedRoles.some((role) => req.user.role.includes(role));
+      const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+      const hasPermission = allowedRoles.some((role) => userRoles.includes(role));
 
-    if (!hasPermission) {
-      return res.status(HTTP_STATUS.FORBIDDEN).json({
-        success: false,
-        message: ERROR_MESSAGE.ACCESS_DENIED,
-      });
-    }
+      if (!hasPermission) {
+        return res.status(HTTP_STATUS.FORBIDDEN).json({
+          success: false,
+          message: ERROR_MESSAGE.ACCESS_DENIED,
+        });
+      }
 
-    next();
+      next();
+    });
   };
 };
 
